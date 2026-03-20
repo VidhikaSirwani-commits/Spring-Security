@@ -1,7 +1,10 @@
 package com.codemine.example.config;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -10,6 +13,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.crypto.password.NoOpPasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 
@@ -18,6 +22,10 @@ import org.springframework.security.web.SecurityFilterChain;
 //one which spring is giving
 @EnableWebSecurity
 public class SecurityConfig {
+
+    @Autowired
+    private UserDetailsService userDetailsService;
+
 /*
 In Security Config here we will give our Beans so that we can customize the security
 By default Spring will work on SecurityFilterChain so its like
@@ -106,36 +114,61 @@ where we will tell spring use this logics to get UN and PWD and not use the prop
 but UserDetailsService is an interface so cannot create object of it
 we will create object of InMemoryUserDetailsManager which indirectly implements UserDetailsService
  */
-    @Bean
-    public UserDetailsService userDetailsService(){
-/*
-only by returning this object it will not be able to authenticate because we are not verifying
-in our code what exactly is the logic
+//    @Bean
+//    public UserDetailsService userDetailsService(){
+///*
+//only by returning this object it will not be able to authenticate because we are not verifying
+//in our code what exactly is the logic
+//
+//so InMemoryDetailsManager has a constructor where it will take many users and then try to take
+//many UserDetails as input so now we can put our users and authenticate them
+//Note: again this UserDetails is an interface so now we need a class object
+//    User is a inbuild Spring class which implements UserDetails so we will use that to build our object
+//
+// */
+//        UserDetails user1= User
+//                //we first need to encode what every password we pass, cannot pass plain string
+//                .withDefaultPasswordEncoder()
+//                .username("kiran")
+//                .password("k@123")
+//                .roles("USER")
+//                .build(); // this build() is returning the UserDetails object
+//
+//        UserDetails user2= User
+//                //we first need to encode what every password we pass, cannot pass plain string
+//                .withDefaultPasswordEncoder()
+//                .username("harsh")
+//                .password("h@123")
+//                .roles("ADMIN")
+//                .build();
+//        //Once objects are built then pass them in the constructor
+//        // now these users what we built those creds will work
+//        return new InMemoryUserDetailsManager(user1,user2);
+//    }
+/* the above whole thing is using hardcoded value which we do not need
+we need to work with the DB so the above method will also not work */
 
-so InMemoryDetailsManager has a constructor where it will take many users and then try to take
-many UserDetails as input so now we can put our users and authenticate them
-Note: again this UserDetails is an interface so now we need a class object
-    User is a inbuild Spring class which implements UserDetails so we will use that to build our object
+
+/*When we pass the UN and PWD, then an Authentication Object is created which is still unauthorized
+To authorize this AuthenticationProvider will do it
+so now need to create a bean of AuthenticationProvider and customize it
+but again AuthenticationProvider is an interface so now need a class which will implement it
+DaoAuthenticationProvider is the implementation class which we will usually use for DB
+so we can create the object and return it
 
  */
-        UserDetails user1= User
-                //we first need to encode what every password we pass, cannot pass plain string
-                .withDefaultPasswordEncoder()
-                .username("kiran")
-                .password("k@123")
-                .roles("USER")
-                .build(); // this build() is returning the UserDetails object
+    @Bean
+    public AuthenticationProvider authenticationProvider(){
+/* the userDetailsService can connect with Db so we need it and we pass into constructor
+ but again this is an interface so we need to use a class
+ but we do not have a customized class so we can create our implement class and then use it
+ so we will create that now
+ * */
+        DaoAuthenticationProvider provider= new DaoAuthenticationProvider(userDetailsService);
+        //now still no DB connection is made so first need to make that
+        // create a default password encoder
+        provider.setPasswordEncoder(NoOpPasswordEncoder.getInstance());
 
-        UserDetails user2= User
-                //we first need to encode what every password we pass, cannot pass plain string
-                .withDefaultPasswordEncoder()
-                .username("harsh")
-                .password("h@123")
-                .roles("ADMIN")
-                .build();
-        //Once objects are built then pass them in the constructor
-        // now these users what we built those creds will work
-        return new InMemoryUserDetailsManager(user1,user2);
+        return provider;
     }
-
 }
