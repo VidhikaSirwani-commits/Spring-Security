@@ -13,6 +13,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.NoOpPasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
@@ -167,8 +168,18 @@ so we can create the object and return it
         DaoAuthenticationProvider provider= new DaoAuthenticationProvider(userDetailsService);
         //now still no DB connection is made so first need to make that
         // create a default password encoder
-        provider.setPasswordEncoder(NoOpPasswordEncoder.getInstance());
 
+//        provider.setPasswordEncoder(NoOpPasswordEncoder.getInstance());
+
+/*now previously in the above line we were giving this NoOpPassword as our default but
+now we will pass our new BCryptPasswordEncoder */
+        provider.setPasswordEncoder(new BCryptPasswordEncoder(12));
+/* now any password passed in the postman will be encrypted and then compared with the password
+in the db. Also remember very important that in DB also the password which is stored is a
+encrypted password and then stored
+so now if you try to pass the non encrypted passwords will give error eg like in our DB we had
+navin and sushil
+ */
         return provider;
     }
 }
