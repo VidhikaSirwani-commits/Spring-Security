@@ -3,9 +3,11 @@ package com.codemine.example.config;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.CsrfConfigurer;
@@ -99,7 +101,13 @@ means the login form will also disapper because it is not doing any filter in th
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http){
         return http.csrf(customizer-> customizer.disable())
-                .authorizeHttpRequests(request-> request.anyRequest().authenticated())
+                .authorizeHttpRequests(request-> request
+//we want that for login and registration no need of authentication
+                        .requestMatchers("/register","/login")
+//other than these 2 permitAll() that means for all other requests other than login and register
+//perform the authentication on all of them
+                        .permitAll()
+                        .anyRequest().authenticated())
                 .httpBasic(Customizer.withDefaults())
                 .sessionManagement(session->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -181,5 +189,11 @@ so now if you try to pass the non encrypted passwords will give error eg like in
 navin and sushil
  */
         return provider;
+    }
+
+
+    @Bean
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration config){
+        return config.getAuthenticationManager();
     }
 }

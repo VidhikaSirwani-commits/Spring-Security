@@ -18,5 +18,13 @@ public class UserController {
         return userService.registerUser(user);
     }
 
+    @PostMapping("/login")
+    public String login(@RequestBody Users user){
+//        System.out.println(user);
+//        return "Success";
+        // i want to verfiy the user then return success simply i do not want success
+
+        return userService.verify(user);
+    }
 
 }
