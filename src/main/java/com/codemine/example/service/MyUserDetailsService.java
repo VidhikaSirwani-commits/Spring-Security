@@ -22,7 +22,7 @@ we will create a repo layer and get our data from there
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
 // find the user based on the username
         Users users= userRepo.findByUsername(username);
-
+        System.out.println(">>> loadUserByUsername called with: " + username);
         if (users==null){
             System.out.println("User not found");
             throw new UsernameNotFoundException("user not found");

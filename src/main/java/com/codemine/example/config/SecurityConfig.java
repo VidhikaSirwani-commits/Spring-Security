@@ -1,5 +1,6 @@
 package com.codemine.example.config;
 
+import com.codemine.example.service.MyUserDetailsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -7,6 +8,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -19,15 +21,21 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.NoOpPasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
 //by enabling this we tell Spring to follow our given security and not the
 //one which spring is giving
 @EnableWebSecurity
 public class SecurityConfig {
+// commented this to fix the bug
+//    @Autowired
+//    private UserDetailsService userDetailsService;
 
     @Autowired
-    private UserDetailsService userDetailsService;
+    private MyUserDetailsService userDetailsService;
+    @Autowired
+    private JwtFilter jwtFilter;
 
 /*
 In Security Config here we will give our Beans so that we can customize the security
@@ -103,14 +111,17 @@ means the login form will also disapper because it is not doing any filter in th
         return http.csrf(customizer-> customizer.disable())
                 .authorizeHttpRequests(request-> request
 //we want that for login and registration no need of authentication
-                        .requestMatchers("/register","/login")
+                        .requestMatchers("/register","/auth/login")
 //other than these 2 permitAll() that means for all other requests other than login and register
 //perform the authentication on all of them
                         .permitAll()
                         .anyRequest().authenticated())
-                .httpBasic(Customizer.withDefaults())
+        //        .httpBasic(Customizer.withDefaults())
                 .sessionManagement(session->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+//here we will tell spring to use jwtFilter before using the UsernamePasswordAuthenticationFilter
+//also Autowired the jwtFilter here
+                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
 
@@ -191,9 +202,15 @@ navin and sushil
         return provider;
     }
 
-
-    @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration config){
-        return config.getAuthenticationManager();
-    }
+//trying to fix a bug as token is not returning
+//    @Bean
+//    public AuthenticationManager authenticationManager(AuthenticationConfiguration config){
+//        return config.getAuthenticationManager();
+//    }
+@Bean
+public AuthenticationManager authenticationManager(HttpSecurity http) throws Exception {
+    return http.getSharedObject(AuthenticationManagerBuilder.class)
+            .authenticationProvider(authenticationProvider())
+            .build();
+}
 }

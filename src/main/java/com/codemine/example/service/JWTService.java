@@ -1,8 +1,10 @@
 package com.codemine.example.service;
 
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.KeyGenerator;
@@ -13,6 +15,7 @@ import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Function;
 
 @Service
 public class JWTService {
@@ -47,7 +50,7 @@ Here when building we will use add(), and() and all these functions   */
                 //create the issue date
                 .issuedAt(new Date(System.currentTimeMillis()))
                 //create expiration date
-                .expiration(new Date(System.currentTimeMillis()*60*60*30))
+                .expiration(new Date(System.currentTimeMillis()+1000*60*30))
                 .and() //we want to add one more condition so we used and()
                 .signWith(getKey())
                 //we are trying to create a signature with the secret key
@@ -63,5 +66,42 @@ Here when building we will use add(), and() and all these functions   */
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
+//run the program, generate the token and check the token is valid or not using the JWT website
 
+    public String extracUserName(String token) {
+        return extrectClaim(token, Claims::getSubject);
+    }
+
+    private <T> T extrectClaim(String token, Function<Claims, T> claimResolver){
+        final Claims claims=extractAllClaims(token);
+        return claimResolver.apply(claims);
+    }
+
+    private Claims extractAllClaims(String token){
+        //older way used to work this way
+//        return Jwts.parser()
+//                .setSigningKey(getKey())
+//                .build().parseClaimsJws(token).getBody();
+        //newer version after jjwt 0.12
+        return Jwts
+                .parser()
+                .verifyWith((SecretKey) getKey()) // new method
+                .build()
+                .parseSignedClaims(token)//all are pervious methods but replaced with new names
+                .getPayload();
+    }
+
+    //now lets check for token validation
+    public boolean validateToken(String token, UserDetails userDetails) {
+        final String userName= extracUserName(token);
+        return (userName.equals(userDetails.getUsername()) && !isTokenExpired(token));
+    }
+
+    private boolean isTokenExpired(String token){
+        return extractExpiration(token).before(new Date());
+    }
+
+    private Date extractExpiration(String token){
+        return extrectClaim(token, Claims::getExpiration);
+    }
 }

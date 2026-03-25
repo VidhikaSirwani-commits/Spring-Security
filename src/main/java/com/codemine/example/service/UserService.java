@@ -55,22 +55,49 @@ check the Security Config Class
  use this Authentication object and now can Authenticate the User
   */
 
-    public String verify(Users user) {
-/* Using the AuthenticationManager do the Authentication
-but now how and what to authenticate
- first the user details what we get we have to authenticate that
- */
-//inside authenticate() we have to pass Authentication check in the function
+    //pervious method
+//    public String verify(Users user) {
+///* Using the AuthenticationManager do the Authentication
+//but now how and what to authenticate
+// first the user details what we get we have to authenticate that
+// */
+////inside authenticate() we have to pass Authentication check in the function
+//        Authentication authentication =
+//                authManager.authenticate(new UsernamePasswordAuthenticationToken(user.getUsername(),user.getPassword()));
+///* Note here from the authentication we are passing the Authentication bject which is not authenticated yet
+//and in return we are getting the Authenticated user back inside the Authentication */
+//
+////Now check if the authentication object returned is authenticated user or not
+//        if(authentication.isAuthenticated())
+//            return jwtService.generateToken(user.getUsername());
+//
+//        return "fail";
+//    }
+
+    // testing if this method works?
+public String verify(Users user) {
+    try {
+        System.out.println("USERNAME INPUT: " + user.getUsername());
+        System.out.println("PASSWORD INPUT: " + user.getPassword());
+
         Authentication authentication =
-                authManager.authenticate(new UsernamePasswordAuthenticationToken(user.getUsername(),user.getPassword()));
-/* Note here from the authentication we are passing the Authentication bject which is not authenticated yet
-and in return we are getting the Authenticated user back inside the Authentication */
+                authManager.authenticate(
+                        new UsernamePasswordAuthenticationToken(
+                                user.getUsername(),
+                                user.getPassword()
+                        )
+                );
 
-//Now check if the authentication object returned is authenticated user or not
-        if(authentication.isAuthenticated())
-            return jwtService.generateToken(user.getUsername());
+        System.out.println("AUTH OBJECT: " + authentication);
+        System.out.println("IS AUTHENTICATED: " + authentication.isAuthenticated());
 
+        return jwtService.generateToken(authentication.getName());
+
+    } catch (Exception e) {
+        System.out.println("❌ ERROR TYPE: " + e.getClass().getSimpleName());
+        System.out.println("❌ ERROR MSG: " + e.getMessage());
+        e.printStackTrace();
         return "fail";
-
     }
+}
 }
